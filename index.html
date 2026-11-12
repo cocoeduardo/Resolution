@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Píxeles, resolución y PPP — demo para clase</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f3ee; --card:#fff; --ink:#16171c; --mute:#6b6d76; --line:#dedcd3;
+    --r:#e5484d; --g:#2f9e64; --b:#3e63dd; --accent:#16171c; --warn:#d9822b;
+    --mono:'JetBrains Mono', ui-monospace, monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif;font-size:17px;line-height:1.5}
+  header{padding:28px 32px 0;max-width:1240px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  h1{font-size:34px;margin:0;letter-spacing:-.02em;line-height:1.1}
+  h1 .dots{display:inline-flex;gap:5px;vertical-align:middle;margin-right:10px}
+  h1 .dots i{width:12px;height:12px;display:block}
+  h1 .dots i:nth-child(1){background:var(--r)} h1 .dots i:nth-child(2){background:var(--g)} h1 .dots i:nth-child(3){background:var(--b)}
+  .sub{color:var(--mute);margin:6px 0 0}
+  .upload{font-size:14px;color:var(--mute);display:flex;gap:10px;align-items:center}
+  .upload label{border:1.5px solid var(--ink);padding:7px 14px;cursor:pointer;color:var(--ink);font-weight:500;background:#fff}
+  .upload label:hover{background:var(--ink);color:#fff}
+  .upload button{font:inherit;border:none;background:none;color:var(--mute);text-decoration:underline;cursor:pointer}
+  nav{max-width:1240px;margin:22px auto 0;padding:0 32px;display:flex;gap:4px;flex-wrap:wrap;border-bottom:1.5px solid var(--ink)}
+  nav button{font:inherit;font-weight:500;font-size:16px;background:none;border:1.5px solid transparent;border-bottom:none;padding:10px 16px;cursor:pointer;color:var(--mute);margin-bottom:-1.5px}
+  nav button .n{font-family:var(--mono);font-size:12px;margin-right:6px}
+  nav button.on{background:var(--bg);border-color:var(--ink);color:var(--ink)}
+  nav button:hover{color:var(--ink)}
+  main{max-width:1240px;margin:0 auto;padding:26px 32px 60px}
+  section{display:none}
+  section.on{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  h2{font-size:28px;margin:0 0 6px;letter-spacing:-.01em}
+  .lead{max-width:820px;margin:0 0 22px;color:#3b3d45}
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start}
+  @media (max-width:980px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);padding:18px}
+  .stage{background:#1b1c22;padding:0;border:none;position:relative}
+  canvas{display:block;max-width:100%}
+  .stage canvas{width:100%;height:auto;image-rendering:pixelated}
+  .ctl{margin-bottom:18px}
+  .ctl label.t{display:flex;justify-content:space-between;font-weight:500;margin-bottom:6px}
+  .ctl label.t output{font-family:var(--mono);font-weight:600}
+  input[type=range]{width:100%;accent-color:var(--ink);height:28px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .chips button{font:inherit;font-size:14px;font-family:var(--mono);border:1px solid var(--line);background:#fff;padding:4px 10px;cursor:pointer}
+  .chips button:hover,.chips button.on{border-color:var(--ink);background:var(--ink);color:#fff}
+  .check{display:flex;gap:8px;align-items:center;margin:8px 0;cursor:pointer;user-select:none}
+  .check input{width:18px;height:18px;accent-color:var(--ink)}
+  .big{font-family:var(--mono);font-size:26px;font-weight:600;line-height:1.2}
+  .kv{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:15px}
+  .kv dt{color:var(--mute)} .kv dd{margin:0;font-family:var(--mono);font-weight:600;text-align:right}
+  .note{border-left:4px solid var(--b);background:#eef1fc;padding:12px 14px;font-size:15px;margin-top:16px}
+  .note.warn{border-color:var(--warn);background:#fbf1e6}
+  .note.ok{border-color:var(--g);background:#e8f5ee}
+  .note.bad{border-color:var(--r);background:#fdecec}
+  .note b{display:block;margin-bottom:2px}
+  .formula{font-family:var(--mono);font-size:15px;background:var(--ink);color:#fff;padding:10px 14px;display:inline-block;margin:4px 6px 4px 0}
+  .formula em{font-style:normal;color:#9fb3ff}
+  .row{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+  .swatch{width:46px;height:46px;border:1px solid var(--line);flex:none}
+  .readout{display:flex;gap:12px;align-items:center;font-family:var(--mono);font-size:14px;min-height:50px}
+  .mini{border:1px solid var(--line);cursor:crosshair;width:100%;height:auto}
+  .lupa-wrap{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  .lupa{width:240px;height:240px;image-rendering:pixelated;border:3px solid var(--ink);background:#fff}
+  .tag{display:inline-block;font-family:var(--mono);font-size:12px;padding:2px 8px;background:var(--ink);color:#fff;margin-bottom:8px}
+  .verdict{font-size:22px;font-weight:700;margin:4px 0}
+  .meter{position:relative;height:16px;background:linear-gradient(90deg,var(--r) 0%,var(--warn) 45%,var(--g) 70%,var(--g) 100%);margin:28px 0 30px}
+  .meter .mk{position:absolute;top:-8px;width:3px;height:32px;background:var(--ink);transform:translateX(-50%)}
+  .meter .mk span{position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:12px;white-space:nowrap;font-weight:600}
+  .meter .mk.need{background:#fff;outline:2px solid var(--ink)}
+  .meter .mk.need span{top:34px}
+  table{border-collapse:collapse;width:100%;font-size:15px}
+  td,th{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left}
+  th{font-size:13px;color:var(--mute);font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+  td.m{font-family:var(--mono);font-weight:600;white-space:nowrap}
+  .field{display:grid;grid-template-columns:110px 1fr 70px;gap:8px;align-items:center;margin-bottom:10px}
+  .field input,.field select,.inp{font:inherit;font-family:var(--mono);font-size:16px;padding:7px 9px;border:1px solid #bdbab0;background:#fff;width:100%}
+  .field input:disabled{background:#eceae3;color:#8a8a8a}
+  .field span{color:var(--mute);font-size:14px}
+  .dlg{background:#2b2c31;color:#e8e8ea;padding:20px;max-width:520px;font-size:15px}
+  .dlg h3{margin:0 0 14px;font-size:16px;font-weight:500;border-bottom:1px solid #45464d;padding-bottom:10px}
+  .dlg .field span{color:#a9aab1}
+  .dlg .field input{background:#1d1e22;color:#fff;border-color:#4b4c53}
+  .dlg .field input:disabled{background:#35363c;color:#7c7d84}
+  .dlg .group{border:1px solid #45464d;padding:14px 14px 6px;margin-bottom:12px;position:relative}
+  .dlg .group .lk{position:absolute;left:-11px;top:50%;transform:translateY(-50%);background:#2b2c31;color:#9fb3ff;font-size:14px}
+  .dlg .check{color:#fff}
+  .dlg button{font:inherit;background:#45464d;color:#fff;border:none;padding:7px 14px;cursor:pointer}
+  .bars{margin-top:14px}
+  .bar{height:22px;background:var(--ink);margin:4px 0 10px;transition:width .3s}
+  .bar.cur{background:var(--b)}
+  .bar.fake{background:repeating-linear-gradient(45deg,var(--b) 0 8px,#9fb3ff 8px 16px)}
+  .small{font-size:14px;color:var(--mute)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media (max-width:980px){.two{grid-template-columns:1fr}}
+  .keys{font-size:13px;color:var(--mute);margin-top:8px}
+  .btn6{font:inherit;font-weight:500;border:1.5px solid var(--ink);background:var(--ink);color:#fff;padding:7px 14px;cursor:pointer}
+  .btn6.ghost{background:#fff;color:var(--ink)}
+  #tab6 td{font-family:var(--mono);font-size:14px}
+  #tab6 tr:last-child td{color:var(--r);font-weight:600}
+  kbd{font-family:var(--mono);font-size:12px;border:1px solid var(--line);padding:1px 5px;background:#fff}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1><span class="dots"><i></i><i></i><i></i></span>Píxeles, resolución y PPP</h1>
+    <p class="sub">Demo interactiva · Diseño gráfico</p>
+  </div>
+  <div class="upload">
+    <label>Usar mi imagen<input type="file" id="file" accept="image/*" hidden></label>
+    <button id="resetImg" hidden>Volver a la imagen de ejemplo</button>
+  </div>
+</header>
+
+<nav id="nav">
+  <button data-s="pixel"><span class="n">01</span>¿Qué es un píxel?</button>
+  <button data-s="resolucion"><span class="n">02</span>Resolución</button>
+  <button data-s="densidad"><span class="n">03</span>Densidad (PPP)</button>
+  <button data-s="pixelado"><span class="n">04</span>¿Se verá pixelado?</button>
+  <button data-s="tamano"><span class="n">05</span>Tamaño de imagen</button>
+  <button data-s="vector"><span class="n">06</span>Píxel vs vector</button>
+</nav>
+
+<main>
+<!-- 01 -->
+<section id="s-pixel">
+  <h2>01 · ¿Qué es un píxel?</h2>
+  <p class="lead">Una imagen digital (mapa de bits) es una <b>cuadrícula de cuadraditos de color</b>. Cada cuadradito es un píxel y solo tiene <b>un color</b>. Acerca el zoom hasta que la imagen deje de parecer una imagen y se vea la cuadrícula. En una pantalla, cada píxel se forma con tres luces: <span style="color:var(--r)">rojo</span>, <span style="color:var(--g)">verde</span> y <span style="color:var(--b)">azul</span>.</p>
+  <div class="grid">
+    <div class="card stage"><canvas id="c1" width="760" height="470" style="cursor:grab"></canvas></div>
+    <div>
+      <div class="card">
+        <div class="ctl">
+          <label class="t">Zoom <output id="z1o">1×</output></label>
+          <input type="range" id="z1" min="1" max="64" value="1">
+          <div class="chips" id="z1chips"><button data-v="1">1×</button><button data-v="4">4×</button><button data-v="12">12×</button><button data-v="32">32×</button><button data-v="64">64×</button></div>
+        </div>
+        <label class="check"><input type="checkbox" id="grid1" checked> Mostrar la cuadrícula de píxeles</label>
+        <label class="check"><input type="checkbox" id="rgb1"> Ver los subpíxeles RGB de la pantalla</label>
+        <p class="small" style="margin:10px 0 6px">Arrastra la imagen para moverte. Haz clic en la miniatura para saltar a una zona.</p>
+        <canvas id="mini1" class="mini" width="300" height="200"></canvas>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <span class="tag">Pasa el ratón por un píxel</span>
+        <div class="readout"><div class="swatch" id="sw1"></div><div id="ro1">—</div></div>
+        <p class="small" id="info1" style="margin:8px 0 0"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 -->
+<section id="s-resolucion">
+  <h2>02 · Resolución: cuántos píxeles tiene la imagen</h2>
+  <p class="lead">La <b>resolución</b> es el número de píxeles a lo ancho × a lo alto. La imagen ocupa <b>el mismo espacio en pantalla</b>, pero con menos píxeles cada uno tiene que ser más grande para cubrirlo: los bordes se vuelven escalones y los detalles finos (letras pequeñas, líneas) desaparecen. Eso es el <b>pixelado</b>.</p>
+  <div class="grid">
+    <div class="card stage"><canvas id="c2" width="900" height="600"></canvas></div>
+    <div>
+      <div class="card">
+        <div class="ctl">
+          <label class="t">Píxeles de ancho <output id="r2o"></output></label>
+          <input type="range" id="r2" min="0" max="1000" value="1000">
+          <div class="chips" id="r2chips"><button data-v="12">12</button><button data-v="32">32</button><button data-v="80">80</button><button data-v="200">200</button><button data-v="480">480</button><button data-v="960">960</button></div>
+        </div>
+        <label class="check"><input type="checkbox" id="smooth2"> Suavizar al ampliar (interpolación)</label>
+        <p class="small" style="margin:2px 0 0">Con el suavizado los escalones se convierten en <b>desenfoque</b>: el ordenador inventa colores intermedios, pero no recupera el detalle perdido.</p>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="big" id="r2big"></div>
+        <dl class="kv" style="margin-top:12px">
+          <dt>Total de píxeles</dt><dd id="r2tot"></dd>
+          <dt>Megapíxeles</dt><dd id="r2mp"></dd>
+          <dt>Cada píxel se ve como</dt><dd id="r2each"></dd>
+        </dl>
+        <div class="note" id="r2note"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 -->
+<section id="s-densidad">
+  <h2>03 · Densidad (PPP): cuántos píxeles caben en una pulgada</h2>
+  <p class="lead">Los <b>PPP</b> (píxeles por pulgada, en inglés PPI o DPI) <b>no cambian la imagen</b>: solo dicen <b>qué tamaño tendrá cada píxel al imprimirse</b>. Con los mismos píxeles, si bajas los PPP cada píxel se hace más grande y la imagen <b>crece físicamente</b>… pero se ve peor de cerca. 1 pulgada = 2,54 cm.</p>
+  <div class="grid">
+    <div>
+      <div class="card stage"><canvas id="c3" width="900" height="520" style="cursor:crosshair"></canvas></div>
+      <p class="small" style="margin:8px 0 0">Haz clic en la imagen para mover la lupa. La línea discontinua es la referencia de tamaño real.</p>
+    </div>
+    <div>
+      <div class="card">
+        <div class="ctl">
+          <label class="t">Imagen</label>
+          <div class="chips" id="px3chips"></div>
+        </div>
+        <div class="ctl">
+          <label class="t">Densidad <output id="d3o"></output></label>
+          <input type="range" id="d3" min="0" max="1000" value="700">
+          <div class="chips" id="d3chips"><button data-v="10">10</button><button data-v="25">25</button><button data-v="72">72</button><button data-v="150">150</button><button data-v="300">300</button><button data-v="600">600</button></div>
+        </div>
+        <div class="ctl" style="margin-bottom:0">
+          <label class="t">Comparar con</label>
+          <div class="chips" id="ref3chips"><button data-v="a4">Folio A4</button><button data-v="a1">Póster A1</button><button data-v="valla">Valla 4×3 m</button></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <span class="tag">Tamaño impreso</span>
+        <div class="big" id="d3size"></div>
+        <dl class="kv" style="margin-top:12px">
+          <dt>Un píxel mide</dt><dd id="d3pix"></dd>
+          <dt>Píxeles en 1 cm</dt><dd id="d3cm"></dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:22px">
+    <div class="lupa-wrap">
+      <canvas id="lupa3" class="lupa" width="240" height="240"></canvas>
+      <div style="flex:1;min-width:260px">
+        <span class="tag">Lupa · 2 × 2 cm del papel impreso</span>
+        <div class="verdict" id="lupa3t"></div>
+        <p id="lupa3d" style="margin:4px 0 12px"></p>
+        <span class="formula"><em>cm</em> = píxeles ÷ PPP × 2,54</span>
+        <span class="formula"><em>tamaño de 1 píxel</em> = 25,4 mm ÷ PPP</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 -->
+<section id="s-pixelado">
+  <h2>04 · ¿Se verá pixelado?</h2>
+  <p class="lead">Que algo se vea pixelado depende de <b>tres cosas</b>: cuántos píxeles tiene la imagen, a qué tamaño se imprime y <b>desde qué distancia se mira</b>. Una valla publicitaria a 20 PPP se ve perfecta desde la carretera; un folleto a 20 PPP sería un mosaico.</p>
+  <div class="two">
+    <div class="card">
+      <div class="field"><span>Imagen (ancho)</span><input type="number" id="p4px" value="3000" min="1"><span>px</span></div>
+      <div class="field"><span>Ancho impreso</span><input type="number" id="p4cm" value="50" min="0.1" step="0.1"><span>cm</span></div>
+      <div class="field"><span>Distancia</span><input type="number" id="p4d" value="1" min="0.1" step="0.1"><span>metros</span></div>
+      <div class="chips" id="p4chips" style="margin:0 0 6px 118px">
+        <button data-v="0.3">Móvil · 30 cm</button><button data-v="0.4">Revista · 40 cm</button><button data-v="1.5">Cartel · 1,5 m</button><button data-v="4">Escaparate · 4 m</button><button data-v="15">Valla · 15 m</button>
+      </div>
+      <div class="meter" id="p4meter"><div class="mk" id="p4mk"><span></span></div><div class="mk need" id="p4need"><span></span></div></div>
+      <div class="verdict" id="p4v"></div>
+      <p id="p4txt" style="margin:4px 0 0"></p>
+    </div>
+    <div class="card">
+      <div class="lupa-wrap">
+        <canvas id="lupa4" class="lupa" width="240" height="240"></canvas>
+        <div style="flex:1;min-width:180px">
+          <span class="tag">Lupa · 2 × 2 cm impresos</span>
+          <p id="lupa4t" style="margin:6px 0"></p>
+          <p class="small">Esto es lo que verías pegando la nariz al papel. Si te alejas, tu ojo deja de distinguir los píxeles.</p>
+        </div>
+      </div>
+      <table style="margin-top:16px">
+        <tr><th>Uso</th><th>Distancia típica</th><th>PPP orientativos</th></tr>
+        <tr><td>Revista, folleto, foto</td><td>30–40 cm</td><td class="m">300</td></tr>
+        <tr><td>Cartel, póster</td><td>1–2 m</td><td class="m">150</td></tr>
+        <tr><td>Lona, roll-up</td><td>2–5 m</td><td class="m">72–100</td></tr>
+        <tr><td>Valla publicitaria</td><td>10 m o más</td><td class="m">15–30</td></tr>
+      </table>
+      <p class="small">Regla aproximada: el ojo humano deja de distinguir puntos separados por menos de 1/60 de grado. PPP necesarios ≈ 3438 ÷ distancia en pulgadas.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 05 -->
+<section id="s-tamano">
+  <h2>05 · El cuadro «Tamaño de imagen»</h2>
+  <p class="lead">Así funciona en Photoshop (y en Affinity, GIMP…). La casilla <b>Remuestrear</b> lo cambia todo: <b>desactivada</b>, los píxeles quedan bloqueados y al cambiar los PPP solo cambia el tamaño en cm. <b>Activada</b>, el programa añade o elimina píxeles.</p>
+  <div class="two">
+    <div class="dlg">
+      <h3>Tamaño de imagen</h3>
+      <div class="group">
+        <span class="lk">🔗</span>
+        <div class="field"><span>Anchura</span><input type="number" id="t5pw"><span>píxeles</span></div>
+        <div class="field"><span>Altura</span><input type="number" id="t5ph"><span>píxeles</span></div>
+      </div>
+      <div class="group">
+        <span class="lk">🔗</span>
+        <div class="field"><span>Anchura</span><input type="number" id="t5cw" step="0.01"><span>cm</span></div>
+        <div class="field"><span>Altura</span><input type="number" id="t5ch" step="0.01"><span>cm</span></div>
+        <div class="field"><span>Resolución</span><input type="number" id="t5r" step="1"><span>ppp</span></div>
+      </div>
+      <label class="check"><input type="checkbox" id="t5rs"> Remuestrear</label>
+      <div style="display:flex;gap:8px;margin-top:10px"><button id="t5reset">Restablecer</button><button id="t5demo">Ejemplo: de 72 a 300 ppp</button></div>
+    </div>
+    <div class="card">
+      <span class="tag" id="t5tag">Qué ha pasado</span>
+      <div class="verdict" id="t5v"></div>
+      <p id="t5txt" style="margin:4px 0 0"></p>
+      <div class="bars">
+        <div class="small">Píxeles originales (información real)</div>
+        <div class="bar" id="t5b0"></div>
+        <div class="small">Píxeles ahora</div>
+        <div class="bar cur" id="t5b1"></div>
+      </div>
+      <div class="note warn"><b>Ojo con el mito de «72 ppp para web»</b>En una pantalla los PPP del archivo no se usan: una imagen de 1920 px de ancho ocupa 1920 px de pantalla tenga 72 o 300 ppp. Para pantalla solo importan los píxeles; los PPP solo importan al imprimir.</div>
+      <div style="margin-top:14px">
+        <span class="formula"><em>píxeles</em> = cm × PPP ÷ 2,54</span>
+        <span class="formula"><em>cm</em> = píxeles ÷ PPP × 2,54</span>
+        <span class="formula"><em>PPP</em> = píxeles ÷ cm × 2,54</span>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 06 -->
+<section id="s-vector">
+  <h2>06 · Píxel vs vector</h2>
+  <p class="lead">Un <b>mapa de bits</b> guarda una cuadrícula de colores: su detalle es fijo. Un <b>vector</b> no guarda colores de puntos sino <b>instrucciones matemáticas</b>: unas coordenadas (x, y) en un plano y cómo unirlas. Cada vez que se dibuja, el ordenador <b>recalcula la forma</b> al tamaño que haga falta. Por eso un logo vectorial se puede ampliar hasta el infinito sin pixelarse.</p>
+
+  <span class="tag">A · Amplía los dos</span>
+  <div class="two" style="margin-bottom:14px">
+    <div>
+      <div class="card stage"><canvas id="c6a" width="520" height="520" style="cursor:grab;image-rendering:pixelated"></canvas></div>
+      <p class="small" id="i6a" style="margin:8px 0 0"></p>
+    </div>
+    <div>
+      <div class="card stage" style="background:#fff;border:1px solid var(--line)"><svg id="s6" viewBox="0 0 100 100" style="display:block;width:100%;aspect-ratio:1;cursor:grab;background:#fff"></svg></div>
+      <p class="small" id="i6b" style="margin:8px 0 0"></p>
+    </div>
+  </div>
+  <div class="card" style="margin-bottom:34px">
+    <div class="row" style="gap:30px">
+      <div class="ctl" style="flex:2;min-width:260px;margin:0">
+        <label class="t">Zoom <output id="z6o">1×</output></label>
+        <input type="range" id="z6" min="0" max="1000" value="0">
+        <div class="chips" id="z6chips"><button data-v="1">1×</button><button data-v="4">4×</button><button data-v="16">16×</button><button data-v="64">64×</button><button data-v="400">400×</button></div>
+      </div>
+      <div class="ctl" style="flex:1;min-width:220px;margin:0">
+        <label class="t">Resolución del mapa de bits</label>
+        <div class="chips" id="r6chips"><button data-v="24">24 px</button><button data-v="64">64 px</button><button data-v="200">200 px</button></div>
+        <label class="check" style="margin-top:12px"><input type="checkbox" id="a6"> Ver los puntos de anclaje del vector</label>
+      </div>
+    </div>
+    <p class="small" style="margin:10px 0 0">Arrastra cualquiera de las dos imágenes para moverte. Las dos se mueven a la vez.</p>
+  </div>
+
+  <span class="tag">B · Un vector es un sistema de coordenadas</span>
+  <div class="grid" style="margin-bottom:34px">
+    <div class="card" style="padding:10px"><svg id="ed6" viewBox="-9 -9 118 118" style="display:block;width:100%;aspect-ratio:1;touch-action:none;user-select:none"></svg></div>
+    <div>
+      <div class="card">
+        <p style="margin:0 0 8px">Arrastra los <b>puntos de anclaje</b> (cuadrados) y los <b>manejadores</b> (círculos). Esto es <b>todo</b> lo que guarda el archivo:</p>
+        <pre id="code6" style="font-family:var(--mono);font-size:14px;background:var(--ink);color:#fff;padding:12px;margin:0;white-space:pre-wrap"></pre>
+        <p class="small" style="margin:8px 0 0">8 números. Da igual si el dibujo mide 1 cm o 100 metros: el archivo pesa lo mismo.</p>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="ctl">
+          <label class="t">Puntos calculados de la curva <output id="n6o"></output></label>
+          <input type="range" id="n6" min="0" max="1000" value="177">
+          <label class="check"><input type="checkbox" id="inf6"> ∞ Curva completa (la fórmula)</label>
+        </div>
+        <p class="small" style="margin:0">Con pocos puntos la curva parece un polígono. Cuantos más calcula el ordenador, más suave. La fórmula permite calcular <b>tantos como queramos</b>.</p>
+      </div>
+    </div>
+  </div>
+
+  <span class="tag">C · Siempre hay otro punto en medio</span>
+  <div class="two" style="margin-bottom:34px">
+    <div class="card">
+      <p style="margin:0 0 10px">Cada punto de la curva corresponde a un valor <b>t</b> entre 0 (inicio) y 1 (final). Elige uno:</p>
+      <div class="ctl">
+        <label class="t">t <output id="t6o"></output></label>
+        <input type="range" id="t6" min="0" max="1000" value="400">
+      </div>
+      <div class="big" id="p6"></div>
+      <p class="small" style="margin:6px 0 14px">Es el punto rojo del plano de arriba.</p>
+      <span class="formula" style="font-size:13px"><em>B(t)</em> = (1−t)³·P0 + 3(1−t)²t·P1 + 3(1−t)t²·P2 + t³·P3</span>
+    </div>
+    <div class="card">
+      <p style="margin:0 0 10px">Ahora busca un punto <b>entre</b> t y t + 0,1. Y otro entre ese y t. Y otro… Nunca se acaban: entre dos números siempre cabe otro. Por eso, en la práctica, <b>un vector tiene infinitos puntos</b>.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn6" id="half6">Buscar un punto en medio</button><button class="btn6 ghost" id="clr6">Empezar de nuevo</button></div>
+      <table id="tab6" style="margin-top:12px"><tr><th>t</th><th>x</th><th>y</th></tr></table>
+    </div>
+  </div>
+
+  <span class="tag">D · Resumen</span>
+  <div class="card">
+    <table>
+      <tr><th></th><th>Mapa de bits (píxeles)</th><th>Vector</th></tr>
+      <tr><td><b>Qué guarda</b></td><td>El color de cada cuadradito de una cuadrícula</td><td>Coordenadas de puntos y fórmulas para unirlos</td></tr>
+      <tr><td><b>Al ampliar</b></td><td>Se pixela o se emborrona</td><td>Siempre nítido: se recalcula</td></tr>
+      <tr><td><b>Peso del archivo</b></td><td>Crece con el número de píxeles</td><td>Depende de cuántos puntos tenga, no del tamaño</td></tr>
+      <tr><td><b>Ideal para</b></td><td>Fotografía, texturas, pintura digital</td><td>Logos, iconos, tipografía, ilustración plana</td></tr>
+      <tr><td><b>Formatos</b></td><td class="m">JPG · PNG · WebP · PSD · TIFF</td><td class="m">SVG · AI · EPS · PDF</td></tr>
+      <tr><td><b>Programas</b></td><td>Photoshop, Affinity Photo, GIMP</td><td>Illustrator, Affinity Designer, Inkscape, Figma</td></tr>
+    </table>
+    <div class="note"><b>Al final, todo acaba en píxeles</b>La pantalla y la impresora solo saben pintar puntos. El vector se <strong>rasteriza</strong> (se convierte en píxeles) en el último momento, a la resolución exacta del dispositivo. Por eso el mismo SVG se ve nítido en un móvil y en una valla.</div>
+  </div>
+</section>
+<p class="keys">Atajos: <kbd>←</kbd> <kbd>→</kbd> para cambiar de apartado.</p>
+</main>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const fmt = (n, d=0) => n.toLocaleString('es-ES', {minimumFractionDigits:d, maximumFractionDigits:d});
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+
+/* ---------- Imagen de ejemplo (dibujada por código, nítida a cualquier resolución) ---------- */
+function drawScene(ctx, w, h){
+  const u = w/960;
+  let g = ctx.createLinearGradient(0,0,0,h*0.68);
+  g.addColorStop(0,'#1d2f7a'); g.addColorStop(.55,'#7b5ea7'); g.addColorStop(1,'#f6a35b');
+  ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+  // sol
+  const sx=w*.72, sy=h*.42, sr=w*.085;
+  g = ctx.createRadialGradient(sx,sy,0,sx,sy,sr*2.2);
+  g.addColorStop(0,'rgba(255,230,150,.9)'); g.addColorStop(1,'rgba(255,200,120,0)');
+  ctx.fillStyle=g; ctx.fillRect(sx-sr*2.5,sy-sr*2.5,sr*5,sr*5);
+  ctx.fillStyle='#ffe08a'; ctx.beginPath(); ctx.arc(sx,sy,sr,0,Math.PI*2); ctx.fill();
+  // montañas
+  ctx.fillStyle='#4a3f7a';
+  ctx.beginPath(); ctx.moveTo(0,h*.62);
+  [[.1,.45],[.22,.56],[.36,.38],[.5,.55],[.62,.47],[.8,.6],[.92,.44],[1,.52],[1,.7],[0,.7]].forEach(p=>ctx.lineTo(w*p[0],h*p[1]));
+  ctx.fill();
+  ctx.fillStyle='#2a2550';
+  ctx.beginPath(); ctx.moveTo(0,h*.66);
+  [[.15,.55],[.28,.64],[.44,.52],[.58,.66],[.74,.58],[.88,.66],[1,.6],[1,.72],[0,.72]].forEach(p=>ctx.lineTo(w*p[0],h*p[1]));
+  ctx.fill();
+  // lago
+  g = ctx.createLinearGradient(0,h*.68,0,h);
+  g.addColorStop(0,'#3b4a9a'); g.addColorStop(1,'#141a3d');
+  ctx.fillStyle=g; ctx.fillRect(0,h*.68,w,h*.32);
+  ctx.fillStyle='rgba(255,224,138,.75)';
+  for(let i=0;i<9;i++){const yy=h*(.71+i*.03), ww=w*(.12-i*.011); ctx.fillRect(sx-ww/2,yy,ww,Math.max(1,2.2*u));}
+  // pájaros (líneas finas)
+  ctx.strokeStyle='#15142e'; ctx.lineWidth=Math.max(.5,1.6*u); ctx.lineCap='round';
+  [[.52,.2],[.56,.16],[.6,.22],[.47,.26]].forEach(p=>{const x=w*p[0],y=h*p[1],s=10*u;ctx.beginPath();ctx.moveTo(x-s,y-s*.5);ctx.quadraticCurveTo(x-s*.4,y-s*.6,x,y);ctx.quadraticCurveTo(x+s*.4,y-s*.6,x+s,y-s*.5);ctx.stroke();});
+  // texto grande y pequeño
+  ctx.fillStyle='#fff'; ctx.textBaseline='alphabetic';
+  ctx.font=`700 ${150*u}px Georgia, serif`; ctx.fillText('Aa',40*u,195*u);
+  ctx.font=`500 ${17*u}px 'Space Grotesk', Arial, sans-serif`;
+  ctx.fillText('El detalle fino desaparece primero',44*u,232*u);
+  ctx.font=`400 ${10*u}px Arial, sans-serif`;
+  ctx.fillText('texto diminuto · 300 ppp · 72 ppp · 150 ppp',44*u,252*u);
+  // círculo de línea fina
+  ctx.strokeStyle='#ff5b6b'; ctx.lineWidth=Math.max(.5,3*u);
+  ctx.beginPath(); ctx.arc(w*.36,h*.2,46*u,0,Math.PI*2); ctx.stroke();
+  // tablero de detalle
+  const bx=40*u, by=h*.76, cs=6*u;
+  for(let i=0;i<14;i++)for(let j=0;j<14;j++){ctx.fillStyle=(i+j)%2?'#fff':'#e5484d';ctx.fillRect(bx+i*cs,by+j*cs,cs,cs);}
+  // barras RGB
+  ['#e5484d','#2f9e64','#3e63dd'].forEach((c,i)=>{ctx.fillStyle=c;ctx.fillRect(w*.86+i*16*u,h*.8,12*u,h*.12);});
+}
+
+/* ---------- Fuente: imagen de ejemplo o imagen subida ---------- */
+let userImg = null, defImg = null;
+const PHOTO = '__PHOTO__';
+const PHOTO_FOCUS = [.5,.4]; // zona interesante de la foto de ejemplo
+let FOCUS = [.36,.128];
+const base = document.createElement('canvas');
+let BW=960, BH=640, baseData=null;
+function buildBase(){
+  if(userImg){ BW=960; BH=Math.round(960*userImg.naturalHeight/userImg.naturalWidth); }
+  else { BW=960; BH=640; }
+  base.width=BW; base.height=BH;
+  const c=base.getContext('2d');
+  c.imageSmoothingQuality='high';
+  if(userImg) c.drawImage(userImg,0,0,BW,BH); else drawScene(c,BW,BH);
+  baseData=c.getImageData(0,0,BW,BH).data;
+}
+// Devuelve un canvas n×m con la región (ox,oy,n,m) de la imagen imaginada a W×H píxeles
+const regC=document.createElement('canvas');
+function region(W,H,ox,oy,n,m){
+  regC.width=n; regC.height=m;
+  const c=regC.getContext('2d');
+  c.imageSmoothingEnabled=true; c.imageSmoothingQuality='high';
+  c.fillStyle='#fff'; c.fillRect(0,0,n,m);
+  if(userImg){
+    const kx=userImg.naturalWidth/W, ky=userImg.naturalHeight/H;
+    c.drawImage(userImg,ox*kx,oy*ky,n*kx,m*ky,0,0,n,m);
+  } else {
+    c.save(); c.translate(-ox,-oy); drawScene(c,W,H); c.restore();
+  }
+  return regC;
+}
+function aspect(){ return userImg ? userImg.naturalHeight/userImg.naturalWidth : 2/3; }
+
+/* ---------- 01 · Píxel ---------- */
+const c1=$('c1'), x1=c1.getContext('2d'), VW=c1.width, VH=c1.height;
+const mini=$('mini1'), xm=mini.getContext('2d');
+let Z=1, cx=480, cy=320;
+function view1(){
+  const sw=VW/Z, sh=VH/Z;
+  const sx = sw>=BW ? (BW-sw)/2 : clamp(cx-sw/2,0,BW-sw);
+  const sy = sh>=BH ? (BH-sh)/2 : clamp(cy-sh/2,0,BH-sh);
+  return {sw,sh,sx,sy};
+}
+function render1(){
+  const {sw,sh,sx,sy}=view1();
+  x1.fillStyle='#1b1c22'; x1.fillRect(0,0,VW,VH);
+  const rgb=$('rgb1').checked && Z>=10, grid=$('grid1').checked && Z>=6;
+  if(Z<3){
+    x1.imageSmoothingEnabled=false;
+    x1.drawImage(base,sx,sy,sw,sh,0,0,VW,VH);
+  } else {
+    const x0=Math.floor(sx), y0=Math.floor(sy), ox=(x0-sx)*Z, oy=(y0-sy)*Z;
+    const nx=Math.ceil(sw)+2, ny=Math.ceil(sh)+2;
+    for(let j=0;j<ny;j++){const py=y0+j; if(py<0||py>=BH) continue;
+      for(let i=0;i<nx;i++){const px=x0+i; if(px<0||px>=BW) continue;
+        const k=(py*BW+px)*4, r=baseData[k], g=baseData[k+1], b=baseData[k+2];
+        const X=ox+i*Z, Y=oy+j*Z;
+        if(rgb){
+          const t=Z/3, gap=Math.max(1,Z*.06);
+          x1.fillStyle='#000'; x1.fillRect(X,Y,Z,Z);
+          x1.fillStyle=`rgb(${r},0,0)`; x1.fillRect(X+gap,Y+gap,t-gap*1.3,Z-gap*2);
+          x1.fillStyle=`rgb(0,${g},0)`; x1.fillRect(X+t+gap*.35,Y+gap,t-gap*1.3,Z-gap*2);
+          x1.fillStyle=`rgb(0,0,${b})`; x1.fillRect(X+2*t+gap*.3,Y+gap,t-gap*1.3,Z-gap*2);
+        } else { x1.fillStyle=`rgb(${r},${g},${b})`; x1.fillRect(X,Y,Z+.5,Z+.5); }
+      }}
+    if(grid && !rgb){
+      x1.strokeStyle='rgba(0,0,0,.35)'; x1.lineWidth=1; x1.beginPath();
+      for(let i=0;i<=nx;i++){const X=Math.round(ox+i*Z)+.5; x1.moveTo(X,0); x1.lineTo(X,VH);}
+      for(let j=0;j<=ny;j++){const Y=Math.round(oy+j*Z)+.5; x1.moveTo(0,Y); x1.lineTo(VW,Y);}
+      x1.stroke();
+    }
+  }
+  // minimapa
+  mini.height=Math.round(mini.width*BH/BW);
+  xm.drawImage(base,0,0,mini.width,mini.height);
+  const k=mini.width/BW;
+  xm.strokeStyle='#fff'; xm.lineWidth=2; xm.strokeRect(Math.max(0,sx)*k,Math.max(0,sy)*k,Math.min(sw,BW)*k,Math.min(sh,BH)*k);
+  xm.strokeStyle='#000'; xm.lineWidth=1; xm.strokeRect(Math.max(0,sx)*k-1.5,Math.max(0,sy)*k-1.5,Math.min(sw,BW)*k+3,Math.min(sh,BH)*k+3);
+  $('z1o').textContent=Z+'×';
+  $('info1').innerHTML = `La imagen tiene <b>${BW} × ${BH} px</b>. Estás viendo unos <b>${fmt(Math.min(sw,BW))} × ${fmt(Math.min(sh,BH))}</b>. Con este zoom, cada píxel de la imagen ocupa <b>${Z} × ${Z}</b> píxeles de tu pantalla.` + (Z<6 && $('grid1').checked ? ' <i>(La cuadrícula aparece a partir de 6×.)</i>' : '') + ($('rgb1').checked && Z<10 ? ' <i>(Los subpíxeles se ven a partir de 10×.)</i>' : '');
+  [...$('z1chips').children].forEach(b=>b.classList.toggle('on',+b.dataset.v===Z));
+}
+function setZ(v, fx, fy){ // zoom manteniendo un punto
+  v=clamp(Math.round(v),1,64);
+  if(fx!=null){ const {sx,sy}=view1(); const px=sx+fx/Z, py=sy+fy/Z; cx=px-(fx-VW/2)/v; cy=py-(fy-VH/2)/v; }
+  Z=v; $('z1').value=v; clampCenter(); render1();
+}
+function clampCenter(){ cx=clamp(cx,0,BW); cy=clamp(cy,0,BH); }
+$('z1').addEventListener('input',e=>setZ(+e.target.value));
+$('z1chips').addEventListener('click',e=>{if(e.target.dataset.v) setZ(+e.target.dataset.v);});
+$('grid1').addEventListener('change',render1); $('rgb1').addEventListener('change',render1);
+function canvasPos(cv,e){const r=cv.getBoundingClientRect(); return [(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height];}
+let drag=null;
+c1.addEventListener('pointerdown',e=>{drag=canvasPos(c1,e); c1.setPointerCapture(e.pointerId); c1.style.cursor='grabbing';});
+c1.addEventListener('pointerup',()=>{drag=null; c1.style.cursor='grab';});
+c1.addEventListener('pointermove',e=>{
+  const p=canvasPos(c1,e);
+  if(drag){ cx-=(p[0]-drag[0])/Z; cy-=(p[1]-drag[1])/Z; drag=p; clampCenter(); render1(); }
+  const {sx,sy}=view1(); const px=Math.floor(sx+p[0]/Z), py=Math.floor(sy+p[1]/Z);
+  if(px>=0&&py>=0&&px<BW&&py<BH){
+    const k=(py*BW+px)*4, r=baseData[k], g=baseData[k+1], b=baseData[k+2];
+    const hex='#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();
+    $('sw1').style.background=hex;
+    $('ro1').innerHTML=`píxel x ${px}, y ${py}<br><span style="color:var(--r)">R ${r}</span> · <span style="color:var(--g)">G ${g}</span> · <span style="color:var(--b)">B ${b}</span> · ${hex}`;
+  }
+});
+c1.addEventListener('wheel',e=>{e.preventDefault(); const p=canvasPos(c1,e); const d=Math.max(1,Math.round(Z*.2)); setZ(Z+(e.deltaY<0?d:-d), p[0], p[1]);},{passive:false});
+mini.addEventListener('click',e=>{const p=canvasPos(mini,e); cx=p[0]*BW/mini.width; cy=p[1]*BH/mini.height; if(Z<4) setZ(12); else render1();});
+
+/* ---------- 02 · Resolución ---------- */
+const c2=$('c2'), x2=c2.getContext('2d'), tmp2=document.createElement('canvas');
+const MINW=6;
+const sToW = s => Math.round(MINW*Math.pow(BW/MINW, s/1000));
+const wToS = w => Math.round(1000*Math.log(w/MINW)/Math.log(BW/MINW));
+function render2(){
+  const w=sToW(+$('r2').value), h=Math.max(1,Math.round(w*BH/BW));
+  c2.height=Math.round(c2.width*BH/BW);
+  tmp2.width=w; tmp2.height=h;
+  const t=tmp2.getContext('2d'); t.imageSmoothingEnabled=true; t.imageSmoothingQuality='high';
+  // reducción en pasos para que se parezca a un buen remuestreo
+  let src=base, sw=BW, sh=BH;
+  const step=document.createElement('canvas');
+  while(sw/2>w){ step.width=Math.round(sw/2); step.height=Math.round(sh/2); const sc=step.getContext('2d'); sc.imageSmoothingQuality='high'; sc.drawImage(src,0,0,sw,sh,0,0,step.width,step.height); const cp=document.createElement('canvas'); cp.width=step.width; cp.height=step.height; cp.getContext('2d').drawImage(step,0,0); src=cp; sw=cp.width; sh=cp.height; }
+  t.drawImage(src,0,0,sw,sh,0,0,w,h);
+  const smooth=$('smooth2').checked;
+  c2.style.imageRendering = smooth ? 'auto' : 'pixelated';
+  x2.imageSmoothingEnabled=smooth; x2.imageSmoothingQuality='high';
+  x2.drawImage(tmp2,0,0,c2.width,c2.height);
+  $('r2o').textContent=fmt(w)+' px';
+  $('r2big').textContent=`${fmt(w)} × ${fmt(h)} px`;
+  $('r2tot').textContent=fmt(w*h);
+  $('r2mp').textContent=fmt(w*h/1e6, w*h<1e5?3:2)+' MP';
+  const each=c2.width/w;
+  $('r2each').textContent=each>=1.5 ? `${fmt(each,1)} × ${fmt(each,1)} px` : '≈ 1 px';
+  const n=$('r2note');
+  if(w<40){ n.className='note bad'; n.innerHTML='<b>Pixelado extremo</b>Ya no se reconoce la forma: solo bloques de color. Así se hacen los iconos «pixel art».'; }
+  else if(w<200){ n.className='note warn'; n.innerHTML='<b>Pixelado evidente</b>Se reconoce la escena, pero los bordes curvos son escaleras y el texto pequeño ha desaparecido.'; }
+  else if(w<600){ n.className='note'; n.innerHTML='<b>Pérdida de detalle</b>A primera vista está bien, pero el texto diminuto y el tablero de cuadros ya no se leen.'; }
+  else { n.className='note ok'; n.innerHTML='<b>Suficientes píxeles para este tamaño</b>Hay más o menos un píxel de imagen por cada píxel de pantalla: no se nota la cuadrícula.'; }
+  [...$('r2chips').children].forEach(b=>b.classList.toggle('on',+b.dataset.v===w));
+}
+$('r2').addEventListener('input',render2); $('smooth2').addEventListener('change',render2);
+$('r2chips').addEventListener('click',e=>{if(e.target.dataset.v){$('r2').value=wToS(+e.target.dataset.v); render2();}});
+
+/* ---------- 03 · Densidad ---------- */
+const c3=$('c3'), x3=c3.getContext('2d');
+const MINP=10, MAXP=600;
+const sToP = s => Math.round(MINP*Math.pow(MAXP/MINP, s/1000));
+const pToS = p => Math.round(1000*Math.log(p/MINP)/Math.log(MAXP/MINP));
+const PRESETS=[600,1200,1920,3000,4500];
+let W3=3000, ref3='a4', focus3=FOCUS.slice(); // foco relativo
+const REFS={a4:{w:21,h:29.7,n:'A4'}, a1:{w:59.4,h:84.1,n:'A1'}, valla:{w:400,h:300,n:'Valla 4×3 m'}};
+function chips3(){
+  const el=$('px3chips'); el.innerHTML='';
+  const list=PRESETS.filter(w=>!userImg||w<userImg.naturalWidth*.95); if(userImg) list.push(userImg.naturalWidth);
+  [...new Set(list)].sort((a,b)=>a-b).forEach(w=>{const b=document.createElement('button'); const h=Math.round(w*aspect()); b.textContent=`${w}×${h}`; b.dataset.v=w; el.appendChild(b);});
+}
+function lupa(cv, W, H, ppp, f){
+  const ctx=cv.getContext('2d');
+  const n=Math.max(1,Math.round(2/2.54*ppp));
+  const ox=Math.round(clamp(f[0]*W-n/2,0,Math.max(0,W-n))), oy=Math.round(clamp(f[1]*H-n/2,0,Math.max(0,H-n)));
+  const r=region(W,H,ox,oy,n,n);
+  ctx.imageSmoothingEnabled=false;
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.drawImage(r,0,0,n,n,0,0,cv.width,cv.height);
+  return n;
+}
+function render3(){
+  const ppp=sToP(+$('d3').value), H3=Math.round(W3*aspect());
+  const wcm=W3/ppp*2.54, hcm=H3/ppp*2.54, ref=REFS[ref3];
+  const pad=50, CW=c3.width, CH=c3.height;
+  const worldW=Math.max(wcm,ref.w)*1.08, worldH=Math.max(hcm,ref.h)*1.08;
+  const k=Math.min((CW-pad*2)/worldW,(CH-pad*1.6)/worldH);
+  const X0=pad, Y0=CH-pad;
+  x3.fillStyle='#1b1c22'; x3.fillRect(0,0,CW,CH);
+  // imagen
+  const iw=wcm*k, ih=hcm*k;
+  x3.imageSmoothingEnabled=true; x3.imageSmoothingQuality='high';
+  if(iw>1&&ih>1) x3.drawImage(base,X0,Y0-ih,iw,ih);
+  x3.strokeStyle='#fff'; x3.lineWidth=1; x3.strokeRect(X0+.5,Y0-ih+.5,iw,ih);
+  // etiqueta imagen
+  x3.fillStyle='#fff'; x3.font="600 14px 'JetBrains Mono', monospace";
+  const lab=`${fmt(wcm,1)} × ${fmt(hcm,1)} cm`;
+  if(iw>120){x3.textAlign='right'; x3.fillText(lab,X0+iw-6,Math.max(16,Y0-ih-8)); x3.textAlign='left';}
+  // referencia
+  const rw=ref.w*k, rh=ref.h*k;
+  x3.setLineDash([7,5]); x3.strokeStyle='#ffd166'; x3.lineWidth=2; x3.strokeRect(X0,Y0-rh,rw,rh); x3.setLineDash([]);
+  x3.fillStyle='#ffd166'; x3.font="600 13px 'Space Grotesk', sans-serif";
+  x3.fillText(ref.n, X0+4, Math.max(14, Y0-rh-6));
+  // marcador lupa
+  const H=H3, fx=focus3[0]*iw, fy=focus3[1]*ih, s=Math.max(8,2*k);
+  x3.strokeStyle='#ff5b6b'; x3.lineWidth=2; x3.strokeRect(X0+fx-s/2,Y0-ih+fy-s/2,s,s);
+  // regla
+  x3.strokeStyle='#8b8c94'; x3.fillStyle='#8b8c94'; x3.lineWidth=1; x3.font="12px 'JetBrains Mono', monospace";
+  x3.beginPath(); x3.moveTo(X0,Y0+8.5); x3.lineTo(CW-pad/2,Y0+8.5); x3.stroke();
+  const steps=[1,2,5,10,20,50,100,200,500,1000]; const st=steps.find(v=>v*k>=60)||1000;
+  for(let v=0; X0+v*k<=CW-pad/2; v+=st){const X=Math.round(X0+v*k)+.5; x3.beginPath(); x3.moveTo(X,Y0+4); x3.lineTo(X,Y0+14); x3.stroke(); x3.fillText(v>=100? fmt(v/100,v%100?1:0)+' m' : v+' cm', X-6, Y0+30);}
+  c3._geo={X0,Y0,iw,ih};
+  // datos
+  $('d3o').textContent=ppp+' ppp';
+  $('d3size').textContent=`${fmt(wcm,1)} × ${fmt(hcm,1)} cm`;
+  $('d3pix').textContent=(25.4/ppp>=1? fmt(25.4/ppp,1) : fmt(25.4/ppp,3))+' mm';
+  $('d3cm').textContent=fmt(ppp/2.54,1);
+  const n=lupa($('lupa3'),W3,H3,ppp,focus3);
+  const t=$('lupa3t'), d=$('lupa3d');
+  if(ppp>=250){t.textContent='Nítido incluso de cerca'; t.style.color='var(--g)';}
+  else if(ppp>=120){t.textContent='Bien a cierta distancia'; t.style.color='var(--b)';}
+  else if(ppp>=50){t.textContent='Se ven los píxeles de cerca'; t.style.color='var(--warn)';}
+  else {t.textContent='Pixelado'; t.style.color='var(--r)';}
+  d.innerHTML=`En 2 cm de papel caben <b>${n} × ${n} píxeles</b>. La imagen sigue teniendo los mismos <b>${fmt(W3)} × ${fmt(H3)} px</b>; solo cambia lo que mide cada uno: <b>${fmt(25.4/ppp,2)} mm</b>.`;
+  [...$('px3chips').children].forEach(b=>b.classList.toggle('on',+b.dataset.v===W3));
+  [...$('d3chips').children].forEach(b=>b.classList.toggle('on',+b.dataset.v===ppp));
+  [...$('ref3chips').children].forEach(b=>b.classList.toggle('on',b.dataset.v===ref3));
+}
+$('d3').addEventListener('input',render3);
+$('d3chips').addEventListener('click',e=>{if(e.target.dataset.v){$('d3').value=pToS(+e.target.dataset.v); render3();}});
+$('px3chips').addEventListener('click',e=>{if(e.target.dataset.v){W3=+e.target.dataset.v; render3();}});
+$('ref3chips').addEventListener('click',e=>{if(e.target.dataset.v){ref3=e.target.dataset.v; render3();}});
+c3.addEventListener('click',e=>{const g=c3._geo; if(!g) return; const p=canvasPos(c3,e); const fx=(p[0]-g.X0)/g.iw, fy=(p[1]-(g.Y0-g.ih))/g.ih; if(fx>=0&&fx<=1&&fy>=0&&fy<=1){focus3=[fx,fy]; render3();}});
+
+/* ---------- 04 · ¿Pixelado? ---------- */
+function render4(){
+  const px=Math.max(1,+$('p4px').value||1), cm=Math.max(.1,+$('p4cm').value||.1), dm=Math.max(.1,+$('p4d').value||.1);
+  const eff=px/(cm/2.54);
+  const need=Math.min(600,3438/(dm*39.37));
+  const ratio=eff/need;
+  const pos=v=>clamp(Math.log(v/5)/Math.log(600/5),0,1)*100; // escala log 5..600 ppp
+  const mk=$('p4mk'), nd=$('p4need');
+  mk.style.left=pos(eff)+'%'; mk.firstElementChild.textContent=`tu imagen: ${fmt(eff)} ppp`;
+  nd.style.left=pos(need)+'%'; nd.firstElementChild.textContent=`necesarios: ${fmt(need)} ppp`;
+  $('p4meter').style.background=`linear-gradient(90deg,var(--r) 0%,var(--r) ${pos(need*.5)}%,var(--warn) ${pos(need*.75)}%,var(--g) ${pos(need)}%,var(--g) 100%)`;
+  const v=$('p4v'), t=$('p4txt');
+  const pxNeed=Math.ceil(need*cm/2.54);
+  if(ratio>=1){v.textContent='✓ Se verá nítido'; v.style.color='var(--g)';
+    t.innerHTML=`A ${fmt(dm,1)} m tu ojo no distingue píxeles por encima de unos ${fmt(need)} ppp, y tu imagen tiene ${fmt(eff)} ppp a ese tamaño.`;}
+  else if(ratio>=.6){v.textContent='~ Aceptable'; v.style.color='var(--warn)';
+    t.innerHTML=`Pasa por bueno, pero mirando con atención se notará algo de falta de definición. Para ir sobrado necesitarías <b>${fmt(pxNeed)} px</b> de ancho.`;}
+  else {v.textContent='✗ Se verá pixelado'; v.style.color='var(--r)';
+    t.innerHTML=`Cada píxel medirá <b>${fmt(25.4/eff,2)} mm</b>: a ${fmt(dm,1)} m se ven. Necesitas unos <b>${fmt(pxNeed)} px</b> de ancho, o imprimir más pequeño (máx. ${fmt(px/need*2.54,1)} cm), o que se mire desde más lejos.`;}
+  const W=px, H=Math.round(px*aspect());
+  const n=lupa($("lupa4"),W,H,eff,FOCUS);
+  $('lupa4t').innerHTML=`<b>${fmt(eff)} ppp</b> efectivos → caben ${n} × ${n} píxeles en 2 cm.`;
+  [...$('p4chips').children].forEach(b=>b.classList.toggle('on',+b.dataset.v===dm));
+}
+['p4px','p4cm','p4d'].forEach(id=>$(id).addEventListener('input',render4));
+$('p4chips').addEventListener('click',e=>{if(e.target.dataset.v){$('p4d').value=e.target.dataset.v; render4();}});
+
+/* ---------- 05 · Tamaño de imagen ---------- */
+const T={ow:0,oh:0,pw:0,ph:0,ppp:72,cw:0,asp:2/3};
+function reset5(){ T.asp=aspect(); T.ow=T.pw=userImg?userImg.naturalWidth:3000; T.oh=T.ph=Math.round(T.pw*T.asp); T.ppp=userImg?72:300; T.cw=T.pw/T.ppp*2.54; $('t5rs').checked=false; sync5(); explain5('Valores originales del archivo.', 'Prueba a cambiar la resolución con «Remuestrear» desactivado y luego activado.'); }
+function sync5(skip){
+  const set=(id,v)=>{ if(id!==skip) $(id).value=v; };
+  set('t5pw',T.pw); set('t5ph',T.ph);
+  set('t5cw',+T.cw.toFixed(2)); set('t5ch',+(T.cw*T.asp).toFixed(2));
+  set('t5r',+T.ppp.toFixed(2));
+  const rs=$('t5rs').checked; $('t5pw').disabled=!rs; $('t5ph').disabled=!rs;
+  const max=Math.max(T.ow,T.pw);
+  $('t5b0').style.width=(T.ow/max*100)+'%';
+  const b1=$('t5b1'); b1.style.width=(T.pw/max*100)+'%'; b1.className='bar '+(T.pw>T.ow?'fake':'cur');
+}
+function explain5(v,t){ $('t5v').textContent=v; $('t5txt').innerHTML=t; }
+function after5(what){
+  const rs=$('t5rs').checked, r=T.pw/T.ow;
+  if(!rs){
+    explain5('Mismos píxeles, otro tamaño', `Has cambiado ${what}. Los píxeles siguen siendo <b>${fmt(T.pw)} × ${fmt(T.ph)}</b>: la imagen es exactamente la misma, solo se imprimirá a <b>${fmt(T.cw,2)} cm</b> de ancho con píxeles de <b>${fmt(25.4/T.ppp,3)} mm</b>. No se gana ni se pierde calidad.`);
+  } else if(Math.abs(r-1)<.001){
+    explain5('Sin cambios en los píxeles', 'El número de píxeles es el original.');
+  } else if(r>1){
+    explain5(`Píxeles inventados (×${fmt(r*r,1)} en total)`, `Has cambiado ${what} con Remuestrear: el programa ha pasado de ${fmt(T.ow)} a <b>${fmt(T.pw)} px</b> de ancho <b>inventando píxeles</b> por interpolación. El archivo pesa más, pero <b>no tiene más detalle</b>: se verá blando o borroso. Las rayas de la barra indican información que no es real.`);
+  } else {
+    explain5(`Píxeles descartados (−${fmt((1-r*r)*100)} % del total)`, `Has cambiado ${what} con Remuestrear: el programa ha pasado de ${fmt(T.ow)} a <b>${fmt(T.pw)} px</b> de ancho <b>eliminando información</b>. Si guardas encima del original, ese detalle se pierde para siempre.`);
+  }
+}
+$('t5r').addEventListener('input',e=>{const v=+e.target.value; if(!(v>0)) return; T.ppp=v;
+  if($('t5rs').checked){ T.pw=Math.max(1,Math.round(T.cw*v/2.54)); T.ph=Math.max(1,Math.round(T.pw*T.asp)); } else { T.cw=T.pw/v*2.54; }
+  sync5('t5r'); after5('la resolución'); });
+const cmEdit=(isH)=>e=>{const v=+e.target.value; if(!(v>0)) return; T.cw=isH? v/T.asp : v;
+  if($('t5rs').checked){ T.pw=Math.max(1,Math.round(T.cw*T.ppp/2.54)); T.ph=Math.max(1,Math.round(T.pw*T.asp)); } else { T.ppp=T.pw/T.cw*2.54; }
+  sync5(isH?'t5ch':'t5cw'); after5('el tamaño en cm'); };
+$('t5cw').addEventListener('input',cmEdit(false)); $('t5ch').addEventListener('input',cmEdit(true));
+const pxEdit=(isH)=>e=>{const v=Math.round(+e.target.value); if(!(v>0)) return;
+  if(isH){T.ph=v; T.pw=Math.max(1,Math.round(v/T.asp));} else {T.pw=v; T.ph=Math.max(1,Math.round(v*T.asp));}
+  T.cw=T.pw/T.ppp*2.54; sync5(isH?'t5ph':'t5pw'); after5('los píxeles'); };
+$('t5pw').addEventListener('input',pxEdit(false)); $('t5ph').addEventListener('input',pxEdit(true));
+$('t5rs').addEventListener('change',()=>{sync5(); explain5($('t5rs').checked?'Remuestrear activado':'Remuestrear desactivado', $('t5rs').checked?'Ahora los píxeles se pueden cambiar. Si cambias la resolución, el tamaño en cm se mantiene y el programa <b>añade o quita píxeles</b>.':'Los píxeles están bloqueados (campos grises). Tamaño en cm y resolución están unidos: si sube uno, baja el otro.');});
+$('t5reset').addEventListener('click',reset5);
+$('t5demo').addEventListener('click',()=>{ T.asp=aspect(); T.ow=T.pw=1200; T.oh=T.ph=Math.round(1200*T.asp); T.ppp=72; T.cw=1200/72*2.54; $('t5rs').checked=false; sync5();
+  explain5('Imagen de 1200 px a 72 ppp', `Mide ${fmt(T.cw,1)} cm de ancho. Ahora escribe <b>300</b> en Resolución: con Remuestrear desactivado la imagen se hará pequeña (${fmt(1200/300*2.54,1)} cm); con Remuestrear activado mantendrá los cm e inventará píxeles hasta ${fmt(Math.round(T.cw*300/2.54))} px.`); });
+
+/* ---------- 06 · Píxel vs vector ---------- */
+const NS='http://www.w3.org/2000/svg';
+const LOGO={drop:'M50 8 C 66 28, 84 46, 84 64 A 34 34 0 0 1 16 64 C 16 46, 34 28, 50 8 Z', ring:[50,64,13]};
+const ANCH=[[50,8],[84,64],[16,64]], HAND=[[66,28],[84,46],[16,46],[34,28]];
+function drawLogo(ctx){
+  ctx.fillStyle='#3e63dd'; ctx.fill(new Path2D(LOGO.drop));
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(LOGO.ring[0],LOGO.ring[1],LOGO.ring[2],0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#e5484d'; ctx.beginPath(); ctx.arc(LOGO.ring[0],LOGO.ring[1],6,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#16171c'; ctx.font='700 9px Georgia, serif'; ctx.textAlign='center'; ctx.fillText('vector',50,96);
+}
+const s6=$('s6');
+s6.innerHTML=`<path d="${LOGO.drop}" fill="#3e63dd"/><circle cx="50" cy="64" r="13" fill="#fff"/><circle cx="50" cy="64" r="6" fill="#e5484d"/><text x="50" y="96" text-anchor="middle" font-family="Georgia, serif" font-weight="700" font-size="9" fill="#16171c">vector</text><g id="anc6"></g>`;
+const c6a=$('c6a'), x6=c6a.getContext('2d'), rc6=document.createElement('canvas');
+let R6=64, Z6=1, v6=[50,50];
+const sToZ6=s=>Math.round(Math.pow(400,s/1000)*10)/10, zToS6=z=>Math.round(1000*Math.log(z)/Math.log(400));
+function buildRaster6(){ rc6.width=rc6.height=R6; const c=rc6.getContext('2d'); c.fillStyle='#fff'; c.fillRect(0,0,R6,R6); c.save(); c.scale(R6/100,R6/100); drawLogo(c); c.restore(); }
+function render6(){
+  const s=100/Z6; v6[0]=clamp(v6[0],0,100); v6[1]=clamp(v6[1],0,100);
+  const x0=v6[0]-s/2, y0=v6[1]-s/2, k=R6/100;
+  x6.fillStyle='#fff'; x6.fillRect(0,0,c6a.width,c6a.height);
+  x6.imageSmoothingEnabled=false;
+  // recorte manual para que funcione igual en todos los navegadores
+  const sx=x0*k, sy=y0*k, sw=s*k, d=c6a.width/sw;
+  const ax=Math.max(0,sx), ay=Math.max(0,sy), bx=Math.min(R6,sx+sw), by=Math.min(R6,sy+sw);
+  if(bx>ax&&by>ay) x6.drawImage(rc6,ax,ay,bx-ax,by-ay,(ax-sx)*d,(ay-sy)*d,(bx-ax)*d,(by-ay)*d);
+  s6.setAttribute('viewBox',`${x0} ${y0} ${s} ${s}`);
+  const g=$('anc6'); g.innerHTML='';
+  if($('a6').checked){
+    const r=1.6*s/100, lw=0.5*s/100;
+    const ln=(a,b)=>`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#16171c" stroke-width="${lw}" stroke-dasharray="${2*lw} ${2*lw}"/>`;
+    let h=ln(ANCH[0],HAND[0])+ln(HAND[1],ANCH[1])+ln(ANCH[2],HAND[2])+ln(HAND[3],ANCH[0]);
+    HAND.forEach(p=>h+=`<circle cx="${p[0]}" cy="${p[1]}" r="${r*.8}" fill="#fff" stroke="#16171c" stroke-width="${lw}"/>`);
+    ANCH.forEach(p=>h+=`<rect x="${p[0]-r}" y="${p[1]-r}" width="${2*r}" height="${2*r}" fill="#ffd166" stroke="#16171c" stroke-width="${lw}"/>`);
+    h+=`<circle cx="50" cy="64" r="${r}" fill="#ffd166" stroke="#16171c" stroke-width="${lw}"/>`;
+    g.innerHTML=h;
+  }
+  $('z6o').textContent=fmt(Z6, Z6<10?1:0)+'×';
+  const px=c6a.width/(R6/Z6);
+  $('i6a').innerHTML=`<b>Mapa de bits · ${R6} × ${R6} px</b> = ${fmt(R6*R6)} colores guardados. Con este zoom cada píxel se ve de ${fmt(px,px<10?1:0)} px de pantalla.`;
+  $('i6b').innerHTML=`<b>Vector · 1 trazado de 3 puntos de anclaje + 1 círculo.</b> Al ampliar ${fmt(Z6, Z6<10?1:0)}× el ordenador recalcula la curva: el borde sigue perfecto.`;
+  [...$('z6chips').children].forEach(b=>b.classList.toggle('on',+b.dataset.v===Z6));
+  [...$('r6chips').children].forEach(b=>b.classList.toggle('on',+b.dataset.v===R6));
+}
+function setZ6(z){ Z6=clamp(z,1,400); $('z6').value=zToS6(Z6); if(Z6>1 && v6[0]===50 && v6[1]===50) v6=[79,44]; if(Z6===1) v6=[50,50]; render6(); }
+$('z6').addEventListener('input',e=>{Z6=sToZ6(+e.target.value); if(Z6>1 && v6[0]===50 && v6[1]===50) v6=[79,44]; if(Z6===1) v6=[50,50]; render6();});
+$('z6chips').addEventListener('click',e=>{if(e.target.dataset.v) setZ6(+e.target.dataset.v);});
+$('r6chips').addEventListener('click',e=>{if(e.target.dataset.v){R6=+e.target.dataset.v; buildRaster6(); render6();}});
+$('a6').addEventListener('change',render6);
+[c6a,s6].forEach(el=>{
+  let last=null;
+  el.addEventListener('pointerdown',e=>{last=[e.clientX,e.clientY]; el.setPointerCapture(e.pointerId); el.style.cursor='grabbing';});
+  el.addEventListener('pointerup',()=>{last=null; el.style.cursor='grab';});
+  el.addEventListener('pointermove',e=>{ if(!last) return; const r=el.getBoundingClientRect(), s=100/Z6;
+    v6[0]-=(e.clientX-last[0])/r.width*s; v6[1]-=(e.clientY-last[1])/r.height*s; last=[e.clientX,e.clientY]; render6(); });
+});
+
+// B · editor de coordenadas
+const ed=$('ed6');
+const P=[[10,75],[30,5],[70,95],[90,25]];
+const bez=(t)=>{const u=1-t; return [0,1].map(i=>u*u*u*P[0][i]+3*u*u*t*P[1][i]+3*u*t*t*P[2][i]+t*t*t*P[3][i]);};
+const sToN6=s=>Math.round(2*Math.pow(500,s/1000));
+let T6=.4, dragI=-1, half=null;
+function el6(tag,attrs,parent){const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); (parent||ed).appendChild(e); return e;}
+function renderEd(){
+  ed.innerHTML='';
+  // cuadrícula
+  for(let i=0;i<=100;i+=5){ const major=i%10===0;
+    el6('line',{x1:i,y1:0,x2:i,y2:100,stroke:major?'#d5d3ca':'#ebe9e2','stroke-width':major?.3:.2});
+    el6('line',{x1:0,y1:i,x2:100,y2:i,stroke:major?'#d5d3ca':'#ebe9e2','stroke-width':major?.3:.2});
+    if(major){ el6('text',{x:i,y:-2.5,'font-size':2.6,'text-anchor':'middle',fill:'#6b6d76','font-family':'JetBrains Mono, monospace'}).textContent=i;
+      el6('text',{x:-2,y:i+.9,'font-size':2.6,'text-anchor':'end',fill:'#6b6d76','font-family':'JetBrains Mono, monospace'}).textContent=i; }
+  }
+  el6('text',{x:104,y:-2.5,'font-size':3.4,fill:'#16171c','font-weight':700}).textContent='x →';
+  el6('text',{x:-7.5,y:106,'font-size':3.4,fill:'#16171c','font-weight':700}).textContent='y ↓';
+  el6('rect',{x:0,y:0,width:100,height:100,fill:'none',stroke:'#16171c','stroke-width':.4});
+  // manejadores
+  [[0,1],[3,2]].forEach(([a,b])=>el6('line',{x1:P[a][0],y1:P[a][1],x2:P[b][0],y2:P[b][1],stroke:'#6b6d76','stroke-width':.35,'stroke-dasharray':'1.2 1'}));
+  // curva
+  const inf=$('inf6').checked, n=sToN6(+$('n6').value);
+  if(inf){ el6('path',{d:`M ${P[0]} C ${P[1]} ${P[2]} ${P[3]}`,fill:'none',stroke:'#3e63dd','stroke-width':1.1}); }
+  else {
+    const pts=[]; for(let i=0;i<n;i++) pts.push(bez(n===1?0:i/(n-1)));
+    el6('polyline',{points:pts.map(p=>p.join(',')).join(' '),fill:'none',stroke:'#3e63dd','stroke-width':.6,opacity:.7});
+    const r=n>200?.25:n>60?.45:.9;
+    pts.forEach(p=>el6('circle',{cx:p[0],cy:p[1],r,fill:'#3e63dd'}));
+  }
+  $('n6o').textContent=inf?'∞':fmt(n); $('n6').disabled=inf;
+  // punto t
+  const q=bez(T6);
+  el6('circle',{cx:q[0],cy:q[1],r:1.6,fill:'#e5484d',stroke:'#fff','stroke-width':.5});
+  const lx=q[0]>70?q[0]-2.5:q[0]+2.5;
+  el6('text',{x:lx,y:q[1]-2.5,'font-size':3,'text-anchor':q[0]>70?'end':'start',fill:'#e5484d','font-family':'JetBrains Mono, monospace','font-weight':600}).textContent=`(${fmt(q[0],2)} ; ${fmt(q[1],2)})`;
+  // puntos editables
+  P.forEach((p,i)=>{
+    const anchor=i===0||i===3;
+    const g=el6('g',{style:'cursor:move'});
+    if(anchor) el6('rect',{x:p[0]-1.8,y:p[1]-1.8,width:3.6,height:3.6,fill:'#ffd166',stroke:'#16171c','stroke-width':.45},g);
+    else el6('circle',{cx:p[0],cy:p[1],r:1.7,fill:'#fff',stroke:'#16171c','stroke-width':.45},g);
+    el6('circle',{cx:p[0],cy:p[1],r:4.5,fill:'transparent'},g);
+    el6('text',{x:p[0],y:p[1]+(p[1]>90?-3.5:5.5),'font-size':2.8,'text-anchor':'middle',fill:'#16171c','font-family':'JetBrains Mono, monospace'}).textContent=`P${i} (${p[0]}, ${p[1]})`;
+    g.addEventListener('pointerdown',e=>{dragI=i; ed.setPointerCapture(e.pointerId); e.preventDefault();});
+  });
+  const h=v=>`<span style="color:#ffd166">${v[0]} ${v[1]}</span>`, hh=v=>`<span style="color:#9fb3ff">${v[0]} ${v[1]}</span>`;
+  $('code6').innerHTML=`&lt;path d="M ${h(P[0])}\n         C ${hh(P[1])},\n           ${hh(P[2])},\n           ${h(P[3])}" /&gt;`;
+  // C
+  $('t6o').textContent=fmt(T6,3);
+  $('p6').textContent=`x ${fmt(q[0],3)} · y ${fmt(q[1],3)}`;
+}
+ed.addEventListener('pointermove',e=>{ if(dragI<0) return; const m=ed.getScreenCTM().inverse(); const pt=new DOMPoint(e.clientX,e.clientY).matrixTransform(m);
+  P[dragI]=[Math.round(clamp(pt.x,0,100)),Math.round(clamp(pt.y,0,100))]; renderEd(); resetHalf(); });
+ed.addEventListener('pointerup',()=>dragI=-1);
+$('n6').addEventListener('input',renderEd); $('inf6').addEventListener('change',renderEd);
+$('t6').addEventListener('input',e=>{T6=+e.target.value/1000; renderEd(); resetHalf();});
+function resetHalf(){ half={a:T6,b:Math.min(1,T6+.1)}; const tb=$('tab6'); tb.innerHTML='<tr><th>t</th><th>x</th><th>y</th></tr>';
+  [half.a,half.b].forEach(t=>addRow(t)); }
+function addRow(t){ const q=bez(t); const tr=document.createElement('tr');
+  const dec=Math.min(12,Math.max(3,String(+t.toFixed(12)).split('.')[1]?.length||0));
+  tr.innerHTML=`<td>${fmt(t,dec)}</td><td>${fmt(q[0],6)}</td><td>${fmt(q[1],6)}</td>`; $('tab6').appendChild(tr);
+  const rows=$('tab6').rows; if(rows.length>9) rows[3].remove(); }
+$('half6').addEventListener('click',()=>{ if(!half) resetHalf(); half.b=(half.a+half.b)/2; addRow(half.b); });
+$('clr6').addEventListener('click',resetHalf);
+function render6all(){ render6(); renderEd(); if(!half) resetHalf(); }
+buildRaster6();
+
+/* ---------- Navegación ---------- */
+const order=['pixel','resolucion','densidad','pixelado','tamano','vector'];
+const renders={pixel:render1,resolucion:render2,densidad:render3,pixelado:render4,tamano:()=>{},vector:render6all};
+function show(id){
+  if(!order.includes(id)) id='pixel';
+  document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='s-'+id));
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.s===id));
+  renders[id](); cur=id;
+}
+let cur='pixel';
+$('nav').addEventListener('click',e=>{const b=e.target.closest('button'); if(b){ location.hash=b.dataset.s; }});
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+document.addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT' && e.target.type!=='range' && e.target.type!=='checkbox') return;
+  const i=order.indexOf(cur); if(e.key==='ArrowRight'&&i<order.length-1) location.hash=order[i+1]; if(e.key==='ArrowLeft'&&i>0) location.hash=order[i-1]; });
+
+/* ---------- Subir imagen ---------- */
+$('file').addEventListener('change',e=>{const f=e.target.files[0]; if(!f) return; const img=new Image(); img.onload=()=>{userImg=img; FOCUS=[.5,.5]; init(); $('resetImg').hidden=false;}; img.src=URL.createObjectURL(f);});
+$('resetImg').addEventListener('click',()=>{userImg=defImg; FOCUS=defImg?PHOTO_FOCUS.slice():[.36,.128]; $('file').value=''; $('resetImg').hidden=true; init();});
+
+function init(){
+  buildBase(); cx=BW*FOCUS[0]; cy=BH*FOCUS[1]; focus3=FOCUS.slice();
+  chips3(); W3=userImg?userImg.naturalWidth:3000;
+  $('r2').value=1000; reset5(); show(location.hash.slice(1)||'pixel');
+}
+(document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(()=>{
+  if(PHOTO.startsWith('data:')){ const im=new Image(); im.onload=()=>{defImg=userImg=im; FOCUS=PHOTO_FOCUS.slice(); init();}; im.onerror=init; im.src=PHOTO; }
+  else init();
+});
+})();
+</script>
+</body>
+</html>
